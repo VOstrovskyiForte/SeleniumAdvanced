@@ -20,7 +20,9 @@ namespace SeleniumAdvanced1
         [SetUp]
         public void SetUp()
         {
-            driver = new ChromeDriver();
+            ChromeOptions options = new ChromeOptions();
+            options.AddArgument("headless");
+            driver = new ChromeDriver(options);
         }
 
         [Test]
@@ -31,12 +33,14 @@ namespace SeleniumAdvanced1
             driver.Navigate().GoToUrl("http://www.leafground.com/home.html");
             By hyperlinkText = By.LinkText("HyperLink");
             //Open Hyperlink in new tab
-            new Actions(driver).KeyDown(Keys.Control).Click(driver.FindElement(hyperlinkText)).Perform();
+            var actions = new Actions(driver);
+            actions.KeyDown(Keys.Control).Click(driver.FindElement(hyperlinkText)).Perform();
+            actions.Release().Perform();
             driver.SwitchTo().Window(driver.WindowHandles[1]);
             //Hover Go to Home Page
             var goToHomePageLink = driver.FindElement(By.LinkText("Go to Home Page"));
             new Actions(driver).MoveToElement(goToHomePageLink).Perform();
-            //Make screenshot
+            //Make screenshot, will be saved to Debug in folder with current datetime
             var screenshotDestinationPath = Path.Combine(TestContext.CurrentContext.TestDirectory, "ScreenshotFolder", DateTime.Now.ToString("yyyy-MM-dd hh-mm-ss"));
             Directory.CreateDirectory(screenshotDestinationPath);
             var screenshotFilePath = Path.Combine(@screenshotDestinationPath, "screenshot.png");
@@ -51,7 +55,14 @@ namespace SeleniumAdvanced1
             //open Droppable page
             var droppableLink = driver.FindElement(By.LinkText("Droppable"));
             droppableLink.Click();
-
+            //go to frame, dragAndDrop
+            var defaultFrame = driver.FindElement(By.CssSelector("iframe[src='/resources/demos/droppable/default.html']"));
+            driver.SwitchTo().Frame(defaultFrame);
+            var smallBoxElement = driver.FindElement(By.Id("draggable"));
+            var bigBoxElement = driver.FindElement(By.Id("droppable"));
+            new Actions(driver).DragAndDrop(smallBoxElement, bigBoxElement).Perform();
+            string bigBoxText = driver.FindElement(By.XPath("//div[@id='droppable']/p")).Text;
+            Assert.That(bigBoxText, Is.EqualTo("Dropped!"));
         }
 
 
